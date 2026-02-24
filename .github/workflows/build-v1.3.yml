@@ -1,0 +1,57 @@
+name: Open62541 v1.3.17 dlls without encryption for windows 32/64 bits
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_windows:
+    runs-on: windows-latest
+    steps:
+
+    - name: Checkout open62541 repository
+      run: |
+        git clone https://github.com/open62541/open62541.git
+        cd open62541
+        git checkout tags/v1.3.17
+        # see https://github.com/open62541/open62541/pull/4753 and https://github.com/olivluca/open62541/commit/fb85aa3a5e25351107f56d7309bb656d4ef77c76
+        curl -o tools/nodeset_compiler/type_parser.py https://raw.githubusercontent.com/olivluca/open62541/master/tools/nodeset_compiler/type_parser.py
+
+    - name: Build open62541 for Win32
+      run: |
+        cd open62541
+        mkdir build32_release
+        cmake -A Win32 -S . -B build32_release -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 -DUA_ENABLE_ENCRYPTION=OFF 
+        cmake --build build32_release --config Release
+        Rename-Item build32_release/bin/Release/open62541.dll libopen62541.dll
+
+
+    - name: Upload artifacts for Win32
+      uses: actions/upload-artifact@v3
+      with:
+        name: v1.3.17-libraries-windows-32
+        path: |
+          open62541/build32_release/src_generated/open62541/config.h
+          open62541/build32_release/src_generated/open62541/types_generated.h
+          open62541/build32_release/bin/
+          open62541/build32_release/libopen62541.dll
+          
+    - name: Build open62541 for Win64
+      run: |
+        cd open62541
+        mkdir build64_release
+        cmake -A x64 -S . -B build64_release -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 -DUA_ENABLE_ENCRYPTION=OFF 
+        cmake --build build64_release --config Release
+        Rename-Item build64_release/bin/Release/open62541.dll libopen62541.dll
+
+
+    - name: Upload artifacts for Win64
+      uses: actions/upload-artifact@v3
+      with:
+        name: v1.2.2-libraries-windows-64
+        path: |
+          open62541/build64_release/src_generated/open62541/config.h
+          open62541/build64_release/src_generated/open62541/types_generated.h
+          open62541/build64_release/bin/
+          open62541/build64_release/libopen62541.dll
+    
+ 
